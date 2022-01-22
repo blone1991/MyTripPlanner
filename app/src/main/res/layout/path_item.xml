@@ -20,6 +20,7 @@
         android:layout_height="match_parent"
         android:layout_weight="4"
         android:hint="장소를 입력하세요"
+        android:inputType="text"
         tools:ignore="HardcodedText" />
     <Button
         android:id="@+id/btn_path_search"

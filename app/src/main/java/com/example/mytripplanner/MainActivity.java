@@ -1,12 +1,12 @@
 package com.example.mytripplanner;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.content.Context;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,8 +17,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.LatLng;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -58,7 +62,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAdded(int index, String path) {
                 Toast.makeText(context, String.format("%d번째 아이템 클릭, 주소 = %s", index, path), Toast.LENGTH_SHORT).show();
-                viewModel.addMapList(index, path);
+                LatLng geo;
+                try {
+                    geo = search(path);
+                } catch (IndexOutOfBoundsException e) {
+                    Toast.makeText(context, "위치를 찾지 못했습니다", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                viewModel.addMapList(new LocationItem(index, path, geo));
             }
 
             @Override
@@ -68,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        viewModel.getPathMapList().observe(this, hashMaps -> pathListAdapter.setPathListMap(hashMaps));
+        viewModel.getPathMapList().observe(this, locationItems -> pathListAdapter.setLocationItems(locationItems));
 
         pathListAdapter = new PathListAdapter(this, ll_path_list, pathListListener);
         pathListAdapter.addChild();
@@ -87,6 +98,28 @@ public class MainActivity extends AppCompatActivity {
     void removePath () {
         pathListAdapter.reduceChild();
     }
+
+    public LatLng search (String path) throws IndexOutOfBoundsException {
+        Geocoder geocoder = new Geocoder(getApplicationContext());
+        List<Address> list = null;
+
+        try {
+            list = geocoder.getFromLocationName(path, 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Address address;
+        try {
+            address = list.get(0);
+        } catch (IndexOutOfBoundsException e) {
+            throw e;
+        }
+
+        LatLng geoPoint = new LatLng(address.getLatitude(), address.getLongitude());
+        return geoPoint;
+    }
+
 }
 
 interface PathListListener {
@@ -96,7 +129,7 @@ interface PathListListener {
 
 class PathListAdapter {
     private int count = 0;
-    ArrayList<HashMap<Integer, String>> pathListMap;
+    ArrayList<LocationItem> locationItems;
     private Context context;
     private PathListListener pathListListener;
     LinearLayout linearLayout;
@@ -107,8 +140,8 @@ class PathListAdapter {
         this.linearLayout = linearLayout;
     }
 
-    public void setPathListMap(ArrayList<HashMap<Integer, String>> pathListMap) {
-        this.pathListMap = pathListMap;
+    public void setLocationItems(ArrayList<LocationItem> locationItems) {
+        this.locationItems = locationItems;
         notifyChanged();
     }
 
@@ -141,10 +174,10 @@ class PathListAdapter {
 
         textView.setText("경로" + (i+1));
 
-        if (pathListMap != null) {
-            for (HashMap<Integer, String> hashMap : pathListMap) {
-                if (hashMap.containsKey(i)) {
-                    editText.setText(hashMap.get(i));
+        if (locationItems != null) {
+            for (LocationItem locationItem : locationItems) {
+                if (locationItem.index == i) {
+                    editText.setText(locationItem.name);
                     break;
                 }
             }

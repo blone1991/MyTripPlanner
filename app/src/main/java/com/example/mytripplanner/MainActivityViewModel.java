@@ -1,49 +1,43 @@
 package com.example.mytripplanner;
 
-import android.os.Bundle;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class MainActivityViewModel extends ViewModel {
-    ArrayList<HashMap<Integer, String>> pathMapList;
-    MutableLiveData<ArrayList<HashMap<Integer, String>>> ld_pathMapList;
+    ArrayList<LocationItem> pathMapList;
+    MutableLiveData<ArrayList<LocationItem>> ld_pathMapList;
 
     public void init () {
         if (pathMapList == null) {
             pathMapList = new ArrayList<>();
         }
         if (ld_pathMapList == null) {
-            ld_pathMapList = new MutableLiveData<ArrayList<HashMap<Integer, String>>>();
+            ld_pathMapList = new MutableLiveData<ArrayList<LocationItem>>();
         }
     }
 
-    public MutableLiveData<ArrayList<HashMap<Integer, String>>> getPathMapList() {
+    public MutableLiveData<ArrayList<LocationItem>> getPathMapList() {
          return ld_pathMapList;
     }
 
-    public void addMapList(int i, String path) {
-        HashMap<Integer, String> hashMap = new HashMap<>();
-        hashMap.put(i, path);
-        pathMapList.add(hashMap);
-        // TODO : Search Address & Mark to Map
+    public void addMapList(LocationItem locationItem) {
+        pathMapList.removeIf(locationItem1 -> locationItem1.index == locationItem.index);
+        pathMapList.add(locationItem);
         ld_pathMapList.setValue(pathMapList);
     }
 
     public void removeMapList (int i) {
-        pathMapList.iterator()
-                .forEachRemaining(hashMap -> hashMap.remove(i));
-
-        // TODO : Remove Marker;
+        pathMapList.removeIf(locationItem -> locationItem.index == i);
         ld_pathMapList.setValue(pathMapList);
     }
 }
-
 
 class MainActivityViewModelProviderFactory implements ViewModelProvider.Factory {
     static ViewModel viewModel;

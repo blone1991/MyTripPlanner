@@ -8,7 +8,10 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,17 +25,47 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 public class MapsFragment extends Fragment {
     MainActivityViewModel viewModel;
-    private GoogleMap map;
+    GoogleMap map;
+    Float[] markerColors = {
+            BitmapDescriptorFactory.HUE_RED,
+            BitmapDescriptorFactory.HUE_ORANGE,
+            BitmapDescriptorFactory.HUE_GREEN,
+            BitmapDescriptorFactory.HUE_CYAN,
+            BitmapDescriptorFactory.HUE_AZURE,
+            BitmapDescriptorFactory.HUE_BLUE,
+            BitmapDescriptorFactory.HUE_VIOLET,
+            BitmapDescriptorFactory.HUE_MAGENTA,
+            BitmapDescriptorFactory.HUE_ROSE,
+            BitmapDescriptorFactory.HUE_YELLOW,
+    };
+
+    class MarkerIndex {
+        int index;
+        Marker marker;
+
+        public MarkerIndex (int index, Marker marker) {
+            this.index = index;
+            this.marker = marker;
+        }
+    }
+
+    ArrayList<MarkerIndex> markers;
+
 
     private OnMapReadyCallback callback = new OnMapReadyCallback() {
 
@@ -45,14 +78,39 @@ public class MapsFragment extends Fragment {
          * install it inside the SupportMapFragment. This method will only be triggered once the
          * user has installed Google Play services and returned to the app.
          */
+        @SuppressLint("MissingPermission")
         @Override
         public void onMapReady(GoogleMap googleMap) {
-            LatLng sydney = new LatLng(-34, 151);
-            googleMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-            googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-            map = googleMap;            ;
+            googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+            googleMap.setMyLocationEnabled(true);
+            googleMap.setTrafficEnabled(true);
+            googleMap.setIndoorEnabled(true);
+            googleMap.setBuildingsEnabled(true);
+            googleMap.getUiSettings().setZoomControlsEnabled(true);
+            googleMap.getUiSettings().setZoomGesturesEnabled(true);
+            map = googleMap;
+
+            markers = new ArrayList<>();
+            viewModel.getPathMapList().observe(getActivity(), locationItems -> {
+                markers.iterator().forEachRemaining(markerIndex -> markerIndex.marker.remove());
+                for (LocationItem locationItem : locationItems) {
+                    Marker marker = addMarker(locationItem);
+                    markers.add(new MarkerIndex(locationItem.index, marker));
+                }
+            });
+
         }
     };
+
+    public Marker addMarker (LocationItem locationItem) {
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(locationItem.geo, 15));
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(locationItem.geo);
+        markerOptions.title(locationItem.name);
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(markerColors[locationItem.index%markerColors.length]));
+        return map.addMarker(markerOptions);
+    }
+
 
     @Nullable
     @Override
