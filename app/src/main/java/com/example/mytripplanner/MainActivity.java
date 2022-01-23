@@ -4,16 +4,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     MainActivityViewModel viewModel;
     public static final int REQUEST_PERMISSIONS = 0;
 
+    @BindView(R.id.sv_main)
+    ScrollView sv_main;
     @BindView(R.id.ll_path_list)
     LinearLayout ll_path_list;
     @BindView(R.id.btn_add_path)
@@ -47,7 +53,9 @@ public class MainActivity extends AppCompatActivity {
 
     PathListAdapter pathListAdapter;
     PathListListener pathListListener;
+    private String TAG = "MyTripPlanner";
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
                 LatLng geo;
                 try {
                     geo = search(path);
-                } catch (IndexOutOfBoundsException e) {
+                } catch (Exception e) {
                     Toast.makeText(context, "위치를 찾지 못했습니다", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -83,6 +91,23 @@ public class MainActivity extends AppCompatActivity {
 
         pathListAdapter = new PathListAdapter(this, ll_path_list, pathListListener);
         pathListAdapter.addChild();
+
+
+
+        fg_container.setOnTouchListener((view, motionEvent) -> {
+            int action = motionEvent.getAction();
+            switch (action)
+            {
+                case MotionEvent.ACTION_DOWN: // Disallow ScrollView to intercept touch events.
+                    view.getParent().requestDisallowInterceptTouchEvent(true);
+                    break;
+                case MotionEvent.ACTION_UP: // Allow ScrollView to intercept touch events.
+                    view.getParent().requestDisallowInterceptTouchEvent(false);
+                    break;
+            }
+            super.onTouchEvent(motionEvent);
+            return true;
+        });
 
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.fg_container, new MapsFragment(), null)
@@ -112,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
         Address address;
         try {
             address = list.get(0);
-        } catch (IndexOutOfBoundsException e) {
+        } catch (Exception e) {
             throw e;
         }
 

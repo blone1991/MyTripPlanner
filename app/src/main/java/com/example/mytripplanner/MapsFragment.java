@@ -29,6 +29,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -37,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MapsFragment extends Fragment {
     MainActivityViewModel viewModel;
@@ -96,6 +99,11 @@ public class MapsFragment extends Fragment {
                 for (LocationItem locationItem : locationItems) {
                     Marker marker = addMarker(locationItem);
                     markers.add(new MarkerIndex(locationItem.index, marker));
+                }
+
+                if (markers.size() > 1) {
+                    // TODO: 경로간 선긋기 추가
+
                 }
             });
 
