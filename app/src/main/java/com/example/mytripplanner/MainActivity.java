@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
         pathListAdapter.reduceChild();
     }
 
-    public LatLng search (String path) throws IndexOutOfBoundsException {
+    public LatLng search (String path) throws Exception {
         Geocoder geocoder = new Geocoder(getApplicationContext());
         List<Address> list = null;
 

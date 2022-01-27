@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -31,6 +32,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -68,7 +70,7 @@ public class MapsFragment extends Fragment {
     }
 
     ArrayList<MarkerIndex> markers;
-
+    Polyline polyline;
 
     private OnMapReadyCallback callback = new OnMapReadyCallback() {
 
@@ -96,6 +98,10 @@ public class MapsFragment extends Fragment {
             markers = new ArrayList<>();
             viewModel.getPathMapList().observe(getActivity(), locationItems -> {
                 markers.iterator().forEachRemaining(markerIndex -> markerIndex.marker.remove());
+
+                if (polyline != null)
+                    polyline.remove();
+
                 for (LocationItem locationItem : locationItems) {
                     Marker marker = addMarker(locationItem);
                     markers.add(new MarkerIndex(locationItem.index, marker));
@@ -103,10 +109,23 @@ public class MapsFragment extends Fragment {
 
                 if (markers.size() > 1) {
                     // TODO: 경로간 선긋기 추가
-
+                    polyline = addPolyLines();
                 }
             });
 
+        }
+
+        private Polyline addPolyLines() {
+            if (markers.size() > 1) {
+                PolylineOptions polylineOptions = new PolylineOptions();
+                polylineOptions.color(Color.DKGRAY);
+                polylineOptions.width(5);
+                markers.stream()
+                        .map(markerIndex -> markerIndex.marker.getPosition())
+                        .forEachOrdered(polylineOptions::add);
+                return map.addPolyline(polylineOptions);
+            }
+            return null;
         }
     };
 
